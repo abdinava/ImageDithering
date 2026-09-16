@@ -104,13 +104,13 @@ def atkinson_dither(img_array, threshold=128):
 # # # Comparison # # #
 #######################################
 
-def show_comp(original, dithered, title="Atkinson Dithering"):
+def show_comp(og, mod, title="Atkinson Dithering"):
     fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-    axes[0].imshow(original, cmap='gray', vmin=0, vmax=255)
+    axes[0].imshow(og, cmap='gray', vmin=0, vmax=255)
     axes[0].set_title("Original")
     axes[0].axis('off')
 
-    axes[1].imshow(dithered, cmap='gray', vmin=0, vmax=255)
+    axes[1].imshow(mod, cmap='gray', vmin=0, vmax=255)
     axes[1].set_title(title)
     axes[1].axis('off')
 
@@ -118,11 +118,22 @@ def show_comp(original, dithered, title="Atkinson Dithering"):
     plt.show()
 
 #######################################
+# # # save # # #
+# saves a numpy image arry to path
+#######################################
+
+def save_image(img_array, path):
+    Image.fromarray(img_array).save(path)
+
+#######################################
 # # # MAIN # # #
 #######################################
 
 path = "mountain.png"
-og = load_grayscale(path, 255)
+pathDith = "mountainDither.png"
 
+og = load_grayscale(path, 255)
 dithered = atkinson_dither(og)
+
 show_comp(og, dithered)
+save_image(dithered, pathDith)
