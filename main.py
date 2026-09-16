@@ -10,6 +10,14 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
+import os
+
+#VIDEO
+
+import imageio
+import re
+
+
 #######################################
 # # # load_grayscale # # #
 # Use convert 'L' to convert to grayscale
@@ -53,7 +61,7 @@ def atkinson_dither(img_array, threshold=128):
     img = img_array.copy()
     h, w = img.shape
 
-    #Atkinson diffusion kernel (* = pixel being scanned)
+    #Atkinson diffusion kernel
     # _   _   *   1/8   1/8
     # .  1/8 1/8  1/8   .
     # .  .   1/8   .    .
@@ -104,7 +112,7 @@ def atkinson_dither(img_array, threshold=128):
 # # # Comparison # # #
 #######################################
 
-def show_comp(og, mod, title="Atkinson Dithering"):
+def show_comp(og, mod, title="Modified"):
     fig, axes = plt.subplots(1, 2, figsize=(12, 6))
     axes[0].imshow(og, cmap='gray', vmin=0, vmax=255)
     axes[0].set_title("Original")
@@ -126,14 +134,91 @@ def save_image(img_array, path):
     Image.fromarray(img_array).save(path)
 
 #######################################
+# # # Atkinson Dither # # #
+#######################################
+
+def atkinson_dither_output(img_array, threshold=128):
+
+    # img = img_array.copy()
+    img = img_array.astype(np.float64)
+    h, w = img.shape
+
+    diffusion_pattern = [
+        (1, 0), (2, 0),
+        (-1, 1), (0, 1), (1, 1),
+        (0, 2)
+    ]
+
+    for y in range(h):
+        for x in range(w):
+
+            og_val = img[y, x]
+
+            if og_val >= threshold:
+                new_val = 255
+            else:
+                new_val = 0
+
+            img[y, x] = new_val
+
+            error = og_val - new_val
+            diffused_error = error / 8
+
+            for dx, dy in diffusion_pattern:
+
+                nx, ny = x + dx, y + dy
+
+                if 0 <= nx < w and 0 <= ny < h:
+                    img[ny, nx] += diffused_error
+
+        if y % 10 == 0:
+            save_dir = "output/images"
+            os.makedirs(save_dir, exist_ok=True)
+
+            filename = f"output{y}.png"
+
+            pathOutput = os.path.join(save_dir, filename)
+            Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).save(pathOutput)
+
+    return np.clip(img, 0, 255).astype(np.uint8)
+
+
+#######################################
 # # # MAIN # # #
 #######################################
 
-path = "mountain.png"
-pathDith = "mountainDither.png"
+# path = "mountain.png"
+# pathDith = "mountainDither.png"
 
-og = load_grayscale(path, 255)
+path = "gato.png"
+pathDith = "gatoDith.png"
+
+og = load_grayscale(path, 250)
 dithered = atkinson_dither(og)
 
 show_comp(og, dithered)
 save_image(dithered, pathDith)
+
+################################
+# SAVE ANIMATION:
+
+# dithered_Final = atkinson_dither_output(og)
+
+#IMAGE-VIDEO THING
+
+# save_dir = "output/images"
+#
+# files = os.listdir(save_dir)
+# files = [f for f in files if f.startswith("output") and f.endswith(".png")]
+# files.sort(key=lambda f: int(re.search(r'\d+', f).group()))
+#
+# writer = imageio.get_writer("output/dither_progress.mp4", fps=30)
+#
+# for f in files:
+#     frame = imageio.imread(os.path.join(save_dir, f))
+#     writer.append_data(frame)
+#     writer.append_data(frame)
+#     writer.append_data(frame)
+#     writer.append_data(frame)
+#
+# writer.close()
